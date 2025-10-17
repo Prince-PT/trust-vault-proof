@@ -2,26 +2,41 @@ export const TRUSTVAULT_ADDRESS = '0x46D24b31E86bb4c0C2D270b83737cA9Ba45E49a8' a
 
 export const TRUSTVAULT_ABI = [
   {
-    "inputs": [
-      { "internalType": "bytes32", "name": "_contentHash", "type": "bytes32" },
-      { "internalType": "bytes32", "name": "_vectorHash", "type": "bytes32" },
-      { "internalType": "string", "name": "_metadataURI", "type": "string" }
-    ],
-    "name": "registerProof",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "inputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
+    "type": "constructor"
   },
   {
-    "inputs": [{ "internalType": "bytes32", "name": "_hash", "type": "bytes32" }],
-    "name": "verifyHash",
-    "outputs": [
-      { "internalType": "bool", "name": "", "type": "bool" },
-      { "internalType": "address", "name": "", "type": "address" },
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+    "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "account", "type": "address" }],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "proofId", "type": "uint256" },
+      { "indexed": true, "internalType": "bytes32", "name": "contentHash", "type": "bytes32" },
+      { "indexed": false, "internalType": "bytes32", "name": "vectorHash", "type": "bytes32" },
+      { "indexed": true, "internalType": "address", "name": "creator", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" },
+      { "indexed": false, "internalType": "string", "name": "metadataURI", "type": "string" }
+    ],
+    "name": "ProofRegistered",
+    "type": "event"
   },
   {
     "inputs": [{ "internalType": "uint256", "name": "_proofId", "type": "uint256" }],
@@ -45,9 +60,72 @@ export const TRUSTVAULT_ABI = [
     "type": "function"
   },
   {
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "name": "idToHash",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "proofCount",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "name": "proofs",
+    "outputs": [
+      { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "vectorHash", "type": "bytes32" },
+      { "internalType": "address", "name": "creator", "type": "address" },
+      { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
+      { "internalType": "string", "name": "metadataURI", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "_contentHash", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "_vectorHash", "type": "bytes32" },
+      { "internalType": "string", "name": "_metadataURI", "type": "string" }
+    ],
+    "name": "registerProof",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "newOwner", "type": "address" }],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "_hash", "type": "bytes32" }],
+    "name": "verifyHash",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" },
+      { "internalType": "address", "name": "", "type": "address" },
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
     "stateMutability": "view",
     "type": "function"
   }
