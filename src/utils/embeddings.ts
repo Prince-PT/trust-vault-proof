@@ -12,12 +12,22 @@ let embedder: any = null;
 async function getEmbedder() {
   if (!embedder) {
     console.log('Loading MiniLM embedding model...');
-    embedder = await pipeline(
-      'feature-extraction',
-      'Xenova/all-MiniLM-L6-v2',
-      { device: 'webgpu' }
-    );
-    console.log('Model loaded successfully');
+    try {
+      // Try WebGPU first, fall back to WASM if not available
+      embedder = await pipeline(
+        'feature-extraction',
+        'Xenova/all-MiniLM-L6-v2',
+        { device: 'webgpu' }
+      );
+      console.log('Model loaded successfully with WebGPU');
+    } catch (error) {
+      console.log('WebGPU not available, falling back to WASM');
+      embedder = await pipeline(
+        'feature-extraction',
+        'Xenova/all-MiniLM-L6-v2'
+      );
+      console.log('Model loaded successfully with WASM');
+    }
   }
   return embedder;
 }
@@ -61,10 +71,31 @@ async function hashEmbedding(embedding: number[]): Promise<string> {
 }
 
 /**
+ * Calculate cosine similarity between two vectors
+ */
+function cosineSimilarity(vec1: number[], vec2: number[]): number {
+  let dotProduct = 0;
+  let norm1 = 0;
+  let norm2 = 0;
+  
+  for (let i = 0; i < vec1.length; i++) {
+    dotProduct += vec1[i] * vec2[i];
+    norm1 += vec1[i] * vec1[i];
+    norm2 += vec2[i] * vec2[i];
+  }
+  
+  return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
+}
+
+/**
  * Generate a semantic vector hash for a file
  * This creates an "AI fingerprint" based on the content's meaning
+ * Returns both the hash and the raw embedding vector
  */
-export async function generateSemanticVectorHash(file: File): Promise<`0x${string}`> {
+export async function generateSemanticVectorHash(file: File): Promise<{
+  hash: `0x${string}`;
+  embedding: number[];
+}> {
   try {
     // Extract text from file
     const text = await extractTextFromFile(file);
@@ -79,11 +110,35 @@ export async function generateSemanticVectorHash(file: File): Promise<`0x${strin
     // Hash the embedding to create a deterministic fingerprint
     const hash = await hashEmbedding(embedding);
     
-    return `0x${hash}`;
+    return {
+      hash: `0x${hash}`,
+      embedding
+    };
   } catch (error) {
     console.error('Error generating semantic vector hash:', error);
     throw error;
   }
+}
+
+/**
+ * Check similarity between a new embedding and existing embeddings
+ * Returns matches above the similarity threshold
+ */
+export function checkSimilarity(
+  newEmbedding: number[],
+  existingEmbeddings: Array<{ hash: string; embedding: number[]; creator: string }>,
+  threshold: number = 0.85
+): Array<{ hash: string; similarity: number; creator: string }> {
+  const matches = existingEmbeddings
+    .map(existing => ({
+      hash: existing.hash,
+      creator: existing.creator,
+      similarity: cosineSimilarity(newEmbedding, existing.embedding)
+    }))
+    .filter(result => result.similarity >= threshold)
+    .sort((a, b) => b.similarity - a.similarity);
+  
+  return matches;
 }
 
 /**

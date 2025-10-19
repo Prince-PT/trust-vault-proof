@@ -8,7 +8,8 @@ import { TRUSTVAULT_ADDRESS, TRUSTVAULT_ABI, SEPOLIA_CHAIN_ID, generateMetadataU
 import { toast } from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
-import { generateSemanticVectorHash, preloadModel } from '@/utils/embeddings';
+import { generateSemanticVectorHash, preloadModel, checkSimilarity } from '@/utils/embeddings';
+import { useVectorStorage } from '@/hooks/useVectorStorage';
 
 export default function Home() {
   const { address, isConnected, chain } = useAccount();
@@ -16,9 +17,11 @@ export default function Home() {
   const [hash, setHash] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [similarContent, setSimilarContent] = useState<Array<{ hash: string; similarity: number; creator: string }>>([]);
 
   const { writeContractAsync, data: txHash, isPending, isError, error } = useWriteContract();
   const { isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
+  const { getVectors, addVector } = useVectorStorage();
 
   // Preload the AI model on mount
   useEffect(() => {
@@ -52,8 +55,24 @@ export default function Home() {
     try {
       // Generate semantic vector hash (AI fingerprint)
       toast.loading('Generating AI fingerprint...', { id: 'ai-fingerprint' });
-      const vectorHash = await generateSemanticVectorHash(uploadedFile);
+      const { hash: vectorHash, embedding } = await generateSemanticVectorHash(uploadedFile);
       toast.success('AI fingerprint generated!', { id: 'ai-fingerprint' });
+
+      // Check for plagiarism
+      toast.loading('Checking for similar content...', { id: 'plagiarism-check' });
+      const existingVectors = getVectors();
+      const similar = checkSimilarity(embedding, existingVectors);
+      setSimilarContent(similar);
+
+      if (similar.length > 0) {
+        toast.error(
+          `⚠️ Similar content detected! ${similar.length} match(es) found with ${Math.round(similar[0].similarity * 100)}% similarity`,
+          { id: 'plagiarism-check', duration: 5000 }
+        );
+        return;
+      }
+      
+      toast.success('No similar content found', { id: 'plagiarism-check' });
 
       await writeContractAsync({
         address: TRUSTVAULT_ADDRESS,
@@ -62,6 +81,15 @@ export default function Home() {
         args: [hash as `0x${string}`, vectorHash, generateMetadataURI()],
         gas: 1000000n,
       } as any);
+
+      // Store vector locally for future comparisons
+      addVector({
+        hash: vectorHash,
+        embedding,
+        creator: address || '',
+        contentHash: hash
+      });
+
     } catch (err) {
       console.error(err);
       toast.error('Transaction failed. Check console for details.');
@@ -168,9 +196,29 @@ export default function Home() {
                 <p className="font-mono text-sm break-all mb-4 text-primary">{hash}</p>
                 <p className="text-sm text-muted-foreground mb-4">File: {fileName}</p>
                 
+                {similarContent.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg"
+                  >
+                    <h3 className="text-sm font-semibold text-destructive mb-2">⚠️ Plagiarism Alert</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Found {similarContent.length} similar document(s):
+                    </p>
+                    {similarContent.map((match, idx) => (
+                      <div key={idx} className="text-xs font-mono mb-1">
+                        <span className="text-destructive font-semibold">{Math.round(match.similarity * 100)}% similar</span>
+                        {' - '}
+                        <span className="text-muted-foreground">{match.hash.slice(0, 16)}...</span>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+
                 <Button
                   onClick={handleRegisterProof}
-                  disabled={isPending}
+                  disabled={isPending || similarContent.length > 0}
                   className="w-full bg-primary hover:bg-primary/90 text-lg py-6"
                 >
                   {isPending ? (
