@@ -24,7 +24,7 @@ export default function Verify() {
     },
   });
 
-  const handleHashComputed = (computedHash: string, name: string) => {
+  const handleHashComputed = (computedHash: string, name: string, file: File) => {
     setHash(computedHash);
     setFileName(name);
     setHasVerified(false);

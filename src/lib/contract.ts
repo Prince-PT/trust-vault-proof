@@ -133,11 +133,4 @@ export const TRUSTVAULT_ABI = [
 
 export const SEPOLIA_CHAIN_ID = 11155111;
 
-// Generate a random vector hash for each upload
-export const generateRandomVectorHash = (): `0x${string}` => {
-  const randomBytes = new Uint8Array(32);
-  crypto.getRandomValues(randomBytes);
-  return `0x${Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`;
-};
-
 export const generateMetadataURI = () => `ipfs://trustvault/${Date.now()}`;

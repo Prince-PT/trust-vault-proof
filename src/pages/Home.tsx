@@ -1,26 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, CheckCircle2, Lock, Zap, ArrowRight } from 'lucide-react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { UploadCard } from '@/components/UploadCard';
-import { TRUSTVAULT_ADDRESS, TRUSTVAULT_ABI, SEPOLIA_CHAIN_ID, generateRandomVectorHash, generateMetadataURI } from '@/lib/contract';
+import { TRUSTVAULT_ADDRESS, TRUSTVAULT_ABI, SEPOLIA_CHAIN_ID, generateMetadataURI } from '@/lib/contract';
 import { toast } from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
+import { generateSemanticVectorHash, preloadModel } from '@/utils/embeddings';
 
 export default function Home() {
   const { address, isConnected, chain } = useAccount();
   const { switchChain } = useSwitchChain();
   const [hash, setHash] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const { writeContractAsync, data: txHash, isPending, isError, error } = useWriteContract();
   const { isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
 
-  const handleHashComputed = (computedHash: string, name: string) => {
+  // Preload the AI model on mount
+  useEffect(() => {
+    preloadModel().catch(console.error);
+  }, []);
+
+  const handleHashComputed = (computedHash: string, name: string, file: File) => {
     setHash(computedHash);
     setFileName(name);
+    setUploadedFile(file);
     toast.success('Hash computed successfully!');
   };
 
@@ -36,13 +44,17 @@ export default function Home() {
       return;
     }
 
-    if (!hash) {
+    if (!hash || !uploadedFile) {
       toast.error('Please upload a file first');
       return;
     }
 
     try {
-      const vectorHash = generateRandomVectorHash();
+      // Generate semantic vector hash (AI fingerprint)
+      toast.loading('Generating AI fingerprint...', { id: 'ai-fingerprint' });
+      const vectorHash = await generateSemanticVectorHash(uploadedFile);
+      toast.success('AI fingerprint generated!', { id: 'ai-fingerprint' });
+
       await writeContractAsync({
         address: TRUSTVAULT_ADDRESS,
         abi: TRUSTVAULT_ABI,

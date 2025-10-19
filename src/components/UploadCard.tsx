@@ -5,7 +5,7 @@ import { computeSHA256 } from '@/utils/hash';
 import { toast } from 'react-hot-toast';
 
 interface UploadCardProps {
-  onHashComputed: (hash: string, fileName: string) => void;
+  onHashComputed: (hash: string, fileName: string, file: File) => void;
   isProcessing?: boolean;
 }
 
@@ -35,7 +35,7 @@ export function UploadCard({ onHashComputed, isProcessing = false }: UploadCardP
       setProgress(100);
       clearInterval(progressInterval);
       setTimeout(() => {
-        onHashComputed(hash, selectedFile.name);
+        onHashComputed(hash, selectedFile.name, selectedFile);
         setIsHashing(false);
       }, 300);
     } catch (error) {
