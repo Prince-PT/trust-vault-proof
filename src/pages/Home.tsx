@@ -4,7 +4,7 @@ import { Shield, CheckCircle2, Lock, Zap, ArrowRight } from 'lucide-react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { UploadCard } from '@/components/UploadCard';
-import { TRUSTVAULT_ADDRESS, TRUSTVAULT_ABI, SEPOLIA_CHAIN_ID, PLACEHOLDER_VECTOR_HASH, generateMetadataURI } from '@/lib/contract';
+import { TRUSTVAULT_ADDRESS, TRUSTVAULT_ABI, SEPOLIA_CHAIN_ID, generateRandomVectorHash, generateMetadataURI } from '@/lib/contract';
 import { toast } from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
@@ -42,11 +42,12 @@ export default function Home() {
     }
 
     try {
+      const vectorHash = generateRandomVectorHash();
       await writeContractAsync({
         address: TRUSTVAULT_ADDRESS,
         abi: TRUSTVAULT_ABI,
         functionName: 'registerProof',
-        args: [hash as `0x${string}`, PLACEHOLDER_VECTOR_HASH as `0x${string}`, generateMetadataURI()],
+        args: [hash as `0x${string}`, vectorHash, generateMetadataURI()],
         gas: 100000n,
       } as any);
     } catch (err) {
