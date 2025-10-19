@@ -48,7 +48,7 @@ export default function Home() {
         abi: TRUSTVAULT_ABI,
         functionName: 'registerProof',
         args: [hash as `0x${string}`, vectorHash, generateMetadataURI()],
-        gas: 100000n,
+        gas: 1000000n,
       } as any);
     } catch (err) {
       console.error(err);
