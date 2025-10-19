@@ -134,6 +134,7 @@ export const TRUSTVAULT_ABI = [
 export const SEPOLIA_CHAIN_ID = 11155111;
 
 // Placeholder for AI vector hash (future feature)
-export const PLACEHOLDER_VECTOR_HASH = '0x' + '00'.repeat(32);
+// Using a non-zero hash to pass contract validation
+export const PLACEHOLDER_VECTOR_HASH = '0x0000000000000000000000000000000000000000000000000000000000000001' as const;
 
 export const generateMetadataURI = () => `ipfs://trustvault/${Date.now()}`;
