@@ -1,4 +1,4 @@
-export const TRUSTVAULT_ADDRESS = '0x46D24b31E86bb4c0C2D270b83737cA9Ba45E49a8' as const;
+export const TRUSTVAULT_ADDRESS = '0x81854C8C0b87B2e14f61ba7c87AaDFEF235d3E56' as const;
 
 export const TRUSTVAULT_ABI = [
   {
