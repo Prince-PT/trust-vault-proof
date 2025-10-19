@@ -11,6 +11,7 @@ interface StoredVector {
   creator: string;
   timestamp: number;
   contentHash: string;
+  text?: string; // Store original text for better short-text comparison
 }
 
 export function useVectorStorage() {

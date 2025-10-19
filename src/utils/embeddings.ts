@@ -33,7 +33,7 @@ async function getEmbedder() {
 }
 
 /**
- * Extract text content from a file
+ * Extract text content from a file and normalize it
  */
 async function extractTextFromFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -46,6 +46,64 @@ async function extractTextFromFile(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsText(file);
   });
+}
+
+/**
+ * Normalize text for better comparison (used for short texts)
+ */
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '') // Remove punctuation
+    .replace(/\s+/g, ' ')     // Normalize whitespace
+    .trim();
+}
+
+/**
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= len1; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= len2; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      if (str1.charAt(i - 1) === str2.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[len1][len2];
+}
+
+/**
+ * Calculate text similarity using Levenshtein distance
+ */
+function textSimilarity(text1: string, text2: string): number {
+  const normalized1 = normalizeText(text1);
+  const normalized2 = normalizeText(text2);
+  
+  const maxLen = Math.max(normalized1.length, normalized2.length);
+  if (maxLen === 0) return 1.0;
+  
+  const distance = levenshteinDistance(normalized1, normalized2);
+  return 1 - (distance / maxLen);
 }
 
 /**
@@ -90,11 +148,12 @@ function cosineSimilarity(vec1: number[], vec2: number[]): number {
 /**
  * Generate a semantic vector hash for a file
  * This creates an "AI fingerprint" based on the content's meaning
- * Returns both the hash and the raw embedding vector
+ * Returns both the hash, embedding vector, and raw text
  */
 export async function generateSemanticVectorHash(file: File): Promise<{
   hash: `0x${string}`;
   embedding: number[];
+  text: string;
 }> {
   try {
     // Extract text from file
@@ -112,7 +171,8 @@ export async function generateSemanticVectorHash(file: File): Promise<{
     
     return {
       hash: `0x${hash}`,
-      embedding
+      embedding,
+      text
     };
   } catch (error) {
     console.error('Error generating semantic vector hash:', error);
@@ -121,20 +181,41 @@ export async function generateSemanticVectorHash(file: File): Promise<{
 }
 
 /**
- * Check similarity between a new embedding and existing embeddings
+ * Check similarity between a new document and existing documents
+ * Uses both semantic embeddings and text-based similarity for short texts
  * Returns matches above the similarity threshold
  */
 export function checkSimilarity(
+  newText: string,
   newEmbedding: number[],
-  existingEmbeddings: Array<{ hash: string; embedding: number[]; creator: string }>,
-  threshold: number = 0.85
-): Array<{ hash: string; similarity: number; creator: string }> {
-  const matches = existingEmbeddings
-    .map(existing => ({
-      hash: existing.hash,
-      creator: existing.creator,
-      similarity: cosineSimilarity(newEmbedding, existing.embedding)
-    }))
+  existingDocuments: Array<{ hash: string; embedding: number[]; creator: string; text?: string }>,
+  threshold: number = 0.75 // Lowered threshold for better detection
+): Array<{ hash: string; similarity: number; creator: string; method: string }> {
+  const SHORT_TEXT_THRESHOLD = 100; // Characters
+  const isShortText = newText.length < SHORT_TEXT_THRESHOLD;
+  
+  const matches = existingDocuments
+    .map(existing => {
+      // For short texts, use text-based similarity (more reliable)
+      if (isShortText && existing.text && existing.text.length < SHORT_TEXT_THRESHOLD) {
+        const textSim = textSimilarity(newText, existing.text);
+        return {
+          hash: existing.hash,
+          creator: existing.creator,
+          similarity: textSim,
+          method: 'text-based'
+        };
+      }
+      
+      // For longer texts, use semantic embeddings
+      const embeddingSim = cosineSimilarity(newEmbedding, existing.embedding);
+      return {
+        hash: existing.hash,
+        creator: existing.creator,
+        similarity: embeddingSim,
+        method: 'semantic'
+      };
+    })
     .filter(result => result.similarity >= threshold)
     .sort((a, b) => b.similarity - a.similarity);
   

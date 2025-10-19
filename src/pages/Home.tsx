@@ -17,7 +17,7 @@ export default function Home() {
   const [hash, setHash] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [similarContent, setSimilarContent] = useState<Array<{ hash: string; similarity: number; creator: string }>>([]);
+  const [similarContent, setSimilarContent] = useState<Array<{ hash: string; similarity: number; creator: string; method: string }>>([]);
 
   const { writeContractAsync, data: txHash, isPending, isError, error } = useWriteContract();
   const { isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
@@ -55,18 +55,19 @@ export default function Home() {
     try {
       // Generate semantic vector hash (AI fingerprint)
       toast.loading('Generating AI fingerprint...', { id: 'ai-fingerprint' });
-      const { hash: vectorHash, embedding } = await generateSemanticVectorHash(uploadedFile);
+      const { hash: vectorHash, embedding, text } = await generateSemanticVectorHash(uploadedFile);
       toast.success('AI fingerprint generated!', { id: 'ai-fingerprint' });
 
       // Check for plagiarism
       toast.loading('Checking for similar content...', { id: 'plagiarism-check' });
       const existingVectors = getVectors();
-      const similar = checkSimilarity(embedding, existingVectors);
+      const similar = checkSimilarity(text, embedding, existingVectors);
       setSimilarContent(similar);
 
       if (similar.length > 0) {
+        const topMatch = similar[0];
         toast.error(
-          `⚠️ Similar content detected! ${similar.length} match(es) found with ${Math.round(similar[0].similarity * 100)}% similarity`,
+          `⚠️ Similar content detected! ${similar.length} match(es) found with ${Math.round(topMatch.similarity * 100)}% similarity (${topMatch.method})`,
           { id: 'plagiarism-check', duration: 5000 }
         );
         return;
@@ -82,12 +83,13 @@ export default function Home() {
         gas: 1000000n,
       } as any);
 
-      // Store vector locally for future comparisons
+      // Store vector locally for future comparisons (including text for short content)
       addVector({
         hash: vectorHash,
         embedding,
         creator: address || '',
-        contentHash: hash
+        contentHash: hash,
+        text: text.length < 100 ? text : undefined // Only store text for short content
       });
 
     } catch (err) {
@@ -207,10 +209,12 @@ export default function Home() {
                       Found {similarContent.length} similar document(s):
                     </p>
                     {similarContent.map((match, idx) => (
-                      <div key={idx} className="text-xs font-mono mb-1">
-                        <span className="text-destructive font-semibold">{Math.round(match.similarity * 100)}% similar</span>
-                        {' - '}
-                        <span className="text-muted-foreground">{match.hash.slice(0, 16)}...</span>
+                      <div key={idx} className="text-xs mb-2 p-2 bg-background/50 rounded">
+                        <div className="font-mono">
+                          <span className="text-destructive font-semibold">{Math.round(match.similarity * 100)}% similar</span>
+                          <span className="text-muted-foreground ml-2">({match.method})</span>
+                        </div>
+                        <div className="text-muted-foreground mt-1">{match.hash.slice(0, 20)}...</div>
                       </div>
                     ))}
                   </motion.div>
