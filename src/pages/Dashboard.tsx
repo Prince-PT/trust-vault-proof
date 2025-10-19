@@ -17,7 +17,8 @@ interface Proof {
 
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
-  const [proofs, setProofs] = useState<Proof[]>([]);
+  const [userProofs, setUserProofs] = useState<Proof[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { data: proofCount } = useReadContract({
     address: TRUSTVAULT_ADDRESS,
@@ -26,28 +27,48 @@ export default function Dashboard() {
     chainId: SEPOLIA_CHAIN_ID,
   });
 
-  // For MVP, we'll simulate fetching user's proofs
-  // In production, you'd index events or maintain a mapping
   useEffect(() => {
-    if (!proofCount || !address) return;
-
     const fetchProofs = async () => {
-      const userProofs: Proof[] = [];
-      const count = Number(proofCount);
+      if (!proofCount || !address) return;
       
-      // Fetch last 10 proofs for demo (in prod, filter by creator)
-      for (let i = Math.max(1, count - 9); i <= count; i++) {
-        // In a real app, you'd call getProofById and filter by creator
-        // For now, we'll create mock data
-        userProofs.push({
-          id: i,
-          contentHash: `0x${Math.random().toString(16).slice(2, 66)}`,
-          timestamp: Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
-          creator: address,
-        });
+      setIsLoading(true);
+      try {
+        const count = Number(proofCount);
+        const { readContract } = await import('@wagmi/core');
+        const { config } = await import('@/lib/wagmi');
+        
+        const filtered: Proof[] = [];
+        
+        // Fetch each proof individually
+        for (let i = 1; i <= count; i++) {
+          try {
+            const proofData = await readContract(config, {
+              address: TRUSTVAULT_ADDRESS,
+              abi: TRUSTVAULT_ABI,
+              functionName: 'getProofById',
+              args: [BigInt(i)],
+            } as any) as any;
+            
+            // Only include proofs created by the connected wallet
+            if (proofData.creator.toLowerCase() === address.toLowerCase()) {
+              filtered.push({
+                id: i,
+                contentHash: proofData.contentHash,
+                timestamp: Number(proofData.timestamp) * 1000,
+                creator: proofData.creator,
+              });
+            }
+          } catch (error) {
+            console.error(`Error fetching proof ${i}:`, error);
+          }
+        }
+        
+        setUserProofs(filtered.reverse());
+      } catch (error) {
+        console.error('Error fetching proofs:', error);
+      } finally {
+        setIsLoading(false);
       }
-
-      setProofs(userProofs.reverse());
     };
 
     fetchProofs();
@@ -82,7 +103,15 @@ export default function Dashboard() {
             All your registered proof-of-originality timestamps
           </p>
 
-          {proofs.length === 0 ? (
+          {isLoading ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="glass p-12 rounded-2xl text-center"
+            >
+              <p className="text-xl">Loading your proofs...</p>
+            </motion.div>
+          ) : userProofs.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -99,7 +128,7 @@ export default function Dashboard() {
             </motion.div>
           ) : (
             <div className="grid gap-4">
-              {proofs.map((proof, index) => (
+              {userProofs.map((proof, index) => (
                 <motion.div
                   key={proof.id}
                   initial={{ opacity: 0, x: -20 }}
