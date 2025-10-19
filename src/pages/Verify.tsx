@@ -101,38 +101,68 @@ export default function Verify() {
 
           {similarContent.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
               className="mt-6"
             >
-              <div className="glass p-6 rounded-xl border-destructive/30">
-                <div className="flex items-center gap-3 mb-4">
-                  <AlertTriangle className="w-8 h-8 text-destructive" />
-                  <div>
-                    <h3 className="text-xl font-bold text-destructive">Plagiarism Alert</h3>
-                    <p className="text-sm text-muted-foreground">Similar content detected</p>
+              <div className="glass p-8 rounded-2xl border-2 border-destructive/40 bg-gradient-to-br from-destructive/5 to-transparent">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+                    <AlertTriangle className="w-8 h-8 text-destructive" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-destructive mb-1">Plagiarism Detected</h3>
+                    <p className="text-muted-foreground">
+                      Found {similarContent.length} similar {similarContent.length === 1 ? 'document' : 'documents'} in the registry
+                    </p>
                   </div>
                 </div>
                 
                 <div className="space-y-3">
                   {similarContent.map((match, idx) => (
-                    <div key={idx} className="p-4 bg-background/50 rounded-lg border border-border">
-                      <div className="flex justify-between items-start mb-2">
-                        <p className="text-sm font-medium">Match #{idx + 1}</p>
-                        <span className="text-sm font-bold text-destructive">
-                          {(match.similarity * 100).toFixed(1)}% similar
-                        </span>
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="group p-5 bg-background/80 backdrop-blur-sm rounded-xl border border-border hover:border-destructive/30 transition-all duration-300"
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                          <span className="text-sm font-semibold text-foreground">Match #{idx + 1}</span>
+                        </div>
+                        <div className="px-3 py-1 rounded-full bg-destructive/10 border border-destructive/20">
+                          <span className="text-base font-bold text-destructive">
+                            {(match.similarity * 100).toFixed(1)}%
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Detection: <span className="font-medium">{match.method}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Hash: <code className="text-xs">{truncateHash(match.hash)}</code>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Creator: <code className="text-xs">{truncateHash(match.creator)}</code>
-                      </p>
-                    </div>
+                      
+                      <div className="grid gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Method:</span>
+                          <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                            {match.method}
+                          </span>
+                        </div>
+                        
+                        <div>
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Content Hash</p>
+                          <code className="text-xs font-mono bg-muted px-2 py-1 rounded break-all">
+                            {truncateHash(match.hash)}
+                          </code>
+                        </div>
+                        
+                        <div>
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Original Creator</p>
+                          <code className="text-xs font-mono bg-muted px-2 py-1 rounded">
+                            {truncateHash(match.creator)}
+                          </code>
+                        </div>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
