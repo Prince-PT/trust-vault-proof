@@ -7,6 +7,7 @@ import { truncateHash } from '@/utils/hash';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { publicClient } from '@/lib/publicClient';
 
 interface Proof {
   id: number;
@@ -34,20 +35,20 @@ export default function Dashboard() {
       setIsLoading(true);
       try {
         const count = Number(proofCount);
-        const { readContract } = await import('@wagmi/core');
-        const { config } = await import('@/lib/wagmi');
-        
+        // Using viem publicClient (ccipRead disabled)
         const filtered: Proof[] = [];
         
         // Fetch each proof individually
         for (let i = 1; i <= count; i++) {
           try {
-            const proofData = await readContract(config, {
-              address: TRUSTVAULT_ADDRESS,
-              abi: TRUSTVAULT_ABI,
-              functionName: 'getProofById',
-              args: [BigInt(i)],
-            } as any) as any;
+            const proofData = await publicClient.readContract(
+              {
+                address: TRUSTVAULT_ADDRESS,
+                abi: TRUSTVAULT_ABI,
+                functionName: 'getProofById',
+                args: [BigInt(i)],
+              } as any
+            ) as any;
             
             // Skip revoked proofs and only include proofs created by the connected wallet
             if (!proofData.revoked && 
