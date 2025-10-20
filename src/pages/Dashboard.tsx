@@ -66,8 +66,9 @@ export default function Dashboard() {
           }) as any;
 
           // proofTuple returns: contentHash, vectorHash, creator, timestamp, metadataURI
-          const creator: string = proofTuple.creator;
-          const timestampMs = Number(proofTuple.timestamp) * 1000;
+          const creator: string = (proofTuple as any).creator ?? (proofTuple as any)[2];
+          const timestampRaw = (proofTuple as any).timestamp ?? (proofTuple as any)[3];
+          const timestampMs = Number(timestampRaw) * 1000;
 
           // Only add proofs from the connected wallet
           if (creator && creator.toLowerCase() === address.toLowerCase()) {
