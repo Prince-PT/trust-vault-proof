@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileCheck, ExternalLink, Clock } from 'lucide-react';
-import { useAccount, useReadContract } from 'wagmi';
+import { FileCheck, ExternalLink, Clock, Crown, UserX } from 'lucide-react';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { publicClient } from '@/lib/publicClient';
 import { TRUSTVAULT_ADDRESS, TRUSTVAULT_ABI, SEPOLIA_CHAIN_ID } from '@/lib/contract';
 import { truncateHash } from '@/utils/hash';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { isAddress } from 'viem';
 
 interface Proof {
   id: number;
@@ -19,6 +24,10 @@ interface Proof {
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
   const [proofs, setProofs] = useState<Proof[]>([]);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [renounceDialogOpen, setRenounceDialogOpen] = useState(false);
+  const [newOwnerAddress, setNewOwnerAddress] = useState('');
+  const { toast } = useToast();
 
   const { data: proofCount } = useReadContract({
     address: TRUSTVAULT_ADDRESS,
@@ -26,6 +35,21 @@ export default function Dashboard() {
     functionName: 'proofCount',
     chainId: SEPOLIA_CHAIN_ID,
   });
+
+  const { data: contractOwner } = useReadContract({
+    address: TRUSTVAULT_ADDRESS,
+    abi: TRUSTVAULT_ABI,
+    functionName: 'owner',
+    chainId: SEPOLIA_CHAIN_ID,
+  });
+
+  const { writeContract: transferOwnership, data: transferHash } = useWriteContract();
+  const { writeContract: renounceOwnership, data: renounceHash } = useWriteContract();
+
+  const { isSuccess: isTransferSuccess } = useWaitForTransactionReceipt({ hash: transferHash });
+  const { isSuccess: isRenounceSuccess } = useWaitForTransactionReceipt({ hash: renounceHash });
+
+  const isOwner = contractOwner && address && contractOwner.toLowerCase() === address.toLowerCase();
 
   // Fetch user's proofs from the blockchain
   useEffect(() => {
@@ -92,6 +116,44 @@ export default function Dashboard() {
     fetchProofs();
   }, [proofCount, address]);
 
+  useEffect(() => {
+    if (isTransferSuccess) {
+      toast({ title: 'Ownership transferred successfully!' });
+      setTransferDialogOpen(false);
+      setNewOwnerAddress('');
+    }
+  }, [isTransferSuccess, toast]);
+
+  useEffect(() => {
+    if (isRenounceSuccess) {
+      toast({ title: 'Ownership renounced successfully!' });
+      setRenounceDialogOpen(false);
+    }
+  }, [isRenounceSuccess, toast]);
+
+  const handleTransferOwnership = () => {
+    if (!isAddress(newOwnerAddress)) {
+      toast({ title: 'Invalid address', variant: 'destructive' });
+      return;
+    }
+    // @ts-ignore - wagmi type compatibility
+    transferOwnership({
+      address: TRUSTVAULT_ADDRESS,
+      abi: TRUSTVAULT_ABI,
+      functionName: 'transferOwnership',
+      args: [newOwnerAddress as `0x${string}`],
+    });
+  };
+
+  const handleRenounceOwnership = () => {
+    // @ts-ignore - wagmi type compatibility
+    renounceOwnership({
+      address: TRUSTVAULT_ADDRESS,
+      abi: TRUSTVAULT_ABI,
+      functionName: 'renounceOwnership',
+    });
+  };
+
   if (!isConnected) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -116,10 +178,70 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Your Proofs</h1>
-          <p className="text-muted-foreground text-lg mb-8">
-            All your registered proof-of-originality timestamps
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">Your Proofs</h1>
+              <p className="text-muted-foreground text-lg">
+                All your registered proof-of-originality timestamps
+              </p>
+            </div>
+            {isOwner && (
+              <div className="flex gap-2">
+                <Dialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Crown className="w-4 h-4" />
+                      Transfer Ownership
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Transfer Contract Ownership</DialogTitle>
+                      <DialogDescription>
+                        Enter the address of the new owner. This action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="newOwner">New Owner Address</Label>
+                        <Input
+                          id="newOwner"
+                          placeholder="0x..."
+                          value={newOwnerAddress}
+                          onChange={(e) => setNewOwnerAddress(e.target.value)}
+                        />
+                      </div>
+                      <Button onClick={handleTransferOwnership} className="w-full">
+                        Transfer Ownership
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={renounceDialogOpen} onOpenChange={setRenounceDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <UserX className="w-4 h-4" />
+                      Renounce Ownership
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Renounce Contract Ownership</DialogTitle>
+                      <DialogDescription>
+                        This will permanently remove your ownership of the contract. This action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <Button onClick={handleRenounceOwnership} variant="destructive" className="w-full">
+                        Confirm Renounce Ownership
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+          </div>
 
           {proofs.length === 0 ? (
             <motion.div
