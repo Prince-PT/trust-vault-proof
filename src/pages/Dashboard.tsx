@@ -42,28 +42,40 @@ export default function Dashboard() {
       // Fetch all proofs and filter by creator
       for (let i = 1; i <= count; i++) {
         try {
-          // @ts-ignore - viem type compatibility issue
-          const proofData = await publicClient.readContract({
+          // First, get the content hash by id
+          // @ts-ignore - viem type compatibility issue (authorizationList)
+          const contentHash = await publicClient.readContract({
             address: TRUSTVAULT_ADDRESS,
             abi: TRUSTVAULT_ABI,
-            functionName: 'getProofById',
+            functionName: 'idToHash',
             args: [BigInt(i)],
+          }) as `0x${string}`;
+
+          // Skip if no hash stored for this id
+          if (!contentHash || contentHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+            continue;
+          }
+
+          // Then read the proof details from the mapping by content hash
+          // @ts-ignore - viem type compatibility issue (authorizationList)
+          const proofTuple = await publicClient.readContract({
+            address: TRUSTVAULT_ADDRESS,
+            abi: TRUSTVAULT_ABI,
+            functionName: 'proofs',
+            args: [contentHash],
           }) as any;
 
-          console.log(`Proof #${i}:`, {
-            creator: proofData.creator,
-            connectedAddress: address,
-            revoked: proofData.revoked,
-            matches: proofData.creator.toLowerCase() === address.toLowerCase()
-          });
+          // proofTuple returns: contentHash, vectorHash, creator, timestamp, metadataURI
+          const creator: string = proofTuple.creator;
+          const timestampMs = Number(proofTuple.timestamp) * 1000;
 
-          // Only add proofs from the connected wallet that aren't revoked
-          if (proofData.creator.toLowerCase() === address.toLowerCase() && !proofData.revoked) {
+          // Only add proofs from the connected wallet
+          if (creator && creator.toLowerCase() === address.toLowerCase()) {
             userProofs.push({
               id: i,
-              contentHash: proofData.contentHash,
-              timestamp: Number(proofData.timestamp) * 1000, // Convert to milliseconds
-              creator: proofData.creator,
+              contentHash,
+              timestamp: timestampMs,
+              creator,
             });
           }
         } catch (error) {
