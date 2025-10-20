@@ -29,11 +29,15 @@ export default function Dashboard() {
 
   // Fetch user's proofs from the blockchain
   useEffect(() => {
-    if (!proofCount || !address) return;
+    if (!proofCount || !address) {
+      console.log('Missing data:', { proofCount, address });
+      return;
+    }
 
     const fetchProofs = async () => {
       const userProofs: Proof[] = [];
       const count = Number(proofCount);
+      console.log('Fetching proofs. Total count:', count, 'Connected address:', address);
       
       // Fetch all proofs and filter by creator
       for (let i = 1; i <= count; i++) {
@@ -46,6 +50,13 @@ export default function Dashboard() {
             args: [BigInt(i)],
           }) as any;
 
+          console.log(`Proof #${i}:`, {
+            creator: proofData.creator,
+            connectedAddress: address,
+            revoked: proofData.revoked,
+            matches: proofData.creator.toLowerCase() === address.toLowerCase()
+          });
+
           // Only add proofs from the connected wallet that aren't revoked
           if (proofData.creator.toLowerCase() === address.toLowerCase() && !proofData.revoked) {
             userProofs.push({
@@ -56,11 +67,12 @@ export default function Dashboard() {
             });
           }
         } catch (error) {
-          // Skip invalid proof IDs (gaps in sequence)
+          console.error(`Error fetching proof #${i}:`, error);
           continue;
         }
       }
 
+      console.log('User proofs found:', userProofs.length, userProofs);
       setProofs(userProofs.sort((a, b) => b.timestamp - a.timestamp));
     };
 
