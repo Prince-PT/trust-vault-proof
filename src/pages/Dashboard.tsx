@@ -36,7 +36,7 @@ export default function Dashboard() {
     chainId: SEPOLIA_CHAIN_ID,
   });
 
-  const { data: contractOwner } = useReadContract({
+  const { data: contractOwner, refetch: refetchOwner } = useReadContract({
     address: TRUSTVAULT_ADDRESS,
     abi: TRUSTVAULT_ABI,
     functionName: 'owner',
@@ -50,6 +50,13 @@ export default function Dashboard() {
   const { isSuccess: isRenounceSuccess } = useWaitForTransactionReceipt({ hash: renounceHash });
 
   const isOwner = contractOwner && address && contractOwner.toLowerCase() === address.toLowerCase();
+
+  // Refetch owner when address changes
+  useEffect(() => {
+    if (address) {
+      refetchOwner();
+    }
+  }, [address, refetchOwner]);
 
   // Fetch user's proofs from the blockchain
   useEffect(() => {
