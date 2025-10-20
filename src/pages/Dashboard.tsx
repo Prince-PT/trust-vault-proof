@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileCheck, ExternalLink, Clock } from 'lucide-react';
 import { useAccount, useReadContract } from 'wagmi';
+import { publicClient } from '@/lib/publicClient';
 import { TRUSTVAULT_ADDRESS, TRUSTVAULT_ABI, SEPOLIA_CHAIN_ID } from '@/lib/contract';
 import { truncateHash } from '@/utils/hash';
 import { formatDistanceToNow } from 'date-fns';
@@ -26,8 +27,7 @@ export default function Dashboard() {
     chainId: SEPOLIA_CHAIN_ID,
   });
 
-  // For MVP, we'll simulate fetching user's proofs
-  // In production, you'd index events or maintain a mapping
+  // Fetch user's proofs from the blockchain
   useEffect(() => {
     if (!proofCount || !address) return;
 
@@ -35,16 +35,30 @@ export default function Dashboard() {
       const userProofs: Proof[] = [];
       const count = Number(proofCount);
       
-      // Fetch last 10 proofs for demo (in prod, filter by creator)
-      for (let i = Math.max(1, count - 9); i <= count; i++) {
-        // In a real app, you'd call getProofById and filter by creator
-        // For now, we'll create mock data
-        userProofs.push({
-          id: i,
-          contentHash: `0x${Math.random().toString(16).slice(2, 66)}`,
-          timestamp: Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
-          creator: address,
-        });
+      // Fetch all proofs and filter by creator
+      for (let i = 1; i <= count; i++) {
+        try {
+          // @ts-ignore - viem type compatibility issue
+          const proofData = await publicClient.readContract({
+            address: TRUSTVAULT_ADDRESS,
+            abi: TRUSTVAULT_ABI,
+            functionName: 'getProofById',
+            args: [BigInt(i)],
+          }) as any;
+
+          // Only add proofs from the connected wallet that aren't revoked
+          if (proofData.creator.toLowerCase() === address.toLowerCase() && !proofData.revoked) {
+            userProofs.push({
+              id: i,
+              contentHash: proofData.contentHash,
+              timestamp: Number(proofData.timestamp) * 1000, // Convert to milliseconds
+              creator: proofData.creator,
+            });
+          }
+        } catch (error) {
+          // Skip invalid proof IDs (gaps in sequence)
+          continue;
+        }
       }
 
       setProofs(userProofs.reverse());
