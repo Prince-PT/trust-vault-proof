@@ -49,8 +49,9 @@ export default function Dashboard() {
               args: [BigInt(i)],
             } as any) as any;
             
-            // Only include proofs created by the connected wallet
-            if (proofData.creator.toLowerCase() === address.toLowerCase()) {
+            // Skip revoked proofs and only include proofs created by the connected wallet
+            if (!proofData.revoked && 
+                proofData.creator.toLowerCase() === address.toLowerCase()) {
               filtered.push({
                 id: i,
                 contentHash: proofData.contentHash,
@@ -59,7 +60,8 @@ export default function Dashboard() {
               });
             }
           } catch (error) {
-            console.error(`Error fetching proof ${i}:`, error);
+            // Silently skip invalid proof IDs (gaps in the sequence)
+            continue;
           }
         }
         
