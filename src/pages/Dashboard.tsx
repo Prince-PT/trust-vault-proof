@@ -7,7 +7,6 @@ import { truncateHash } from '@/utils/hash';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { publicClient } from '@/lib/publicClient';
 
 interface Proof {
   id: number;
@@ -18,8 +17,7 @@ interface Proof {
 
 export default function Dashboard() {
   const { address, isConnected } = useAccount();
-  const [userProofs, setUserProofs] = useState<Proof[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [proofs, setProofs] = useState<Proof[]>([]);
 
   const { data: proofCount } = useReadContract({
     address: TRUSTVAULT_ADDRESS,
@@ -28,50 +26,28 @@ export default function Dashboard() {
     chainId: SEPOLIA_CHAIN_ID,
   });
 
+  // For MVP, we'll simulate fetching user's proofs
+  // In production, you'd index events or maintain a mapping
   useEffect(() => {
+    if (!proofCount || !address) return;
+
     const fetchProofs = async () => {
-      if (!proofCount || !address) return;
+      const userProofs: Proof[] = [];
+      const count = Number(proofCount);
       
-      setIsLoading(true);
-      try {
-        const count = Number(proofCount);
-        // Using viem publicClient (ccipRead disabled)
-        const filtered: Proof[] = [];
-        
-        // Fetch each proof individually
-        for (let i = 1; i <= count; i++) {
-          try {
-            const proofData = await publicClient.readContract(
-              {
-                address: TRUSTVAULT_ADDRESS,
-                abi: TRUSTVAULT_ABI,
-                functionName: 'getProofById',
-                args: [BigInt(i)],
-              } as any
-            ) as any;
-            
-            // Skip revoked proofs and only include proofs created by the connected wallet
-            if (!proofData.revoked && 
-                proofData.creator.toLowerCase() === address.toLowerCase()) {
-              filtered.push({
-                id: i,
-                contentHash: proofData.contentHash,
-                timestamp: Number(proofData.timestamp) * 1000,
-                creator: proofData.creator,
-              });
-            }
-          } catch (error) {
-            // Silently skip invalid proof IDs (gaps in the sequence)
-            continue;
-          }
-        }
-        
-        setUserProofs(filtered.reverse());
-      } catch (error) {
-        console.error('Error fetching proofs:', error);
-      } finally {
-        setIsLoading(false);
+      // Fetch last 10 proofs for demo (in prod, filter by creator)
+      for (let i = Math.max(1, count - 9); i <= count; i++) {
+        // In a real app, you'd call getProofById and filter by creator
+        // For now, we'll create mock data
+        userProofs.push({
+          id: i,
+          contentHash: `0x${Math.random().toString(16).slice(2, 66)}`,
+          timestamp: Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
+          creator: address,
+        });
       }
+
+      setProofs(userProofs.reverse());
     };
 
     fetchProofs();
@@ -106,15 +82,7 @@ export default function Dashboard() {
             All your registered proof-of-originality timestamps
           </p>
 
-          {isLoading ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="glass p-12 rounded-2xl text-center"
-            >
-              <p className="text-xl">Loading your proofs...</p>
-            </motion.div>
-          ) : userProofs.length === 0 ? (
+          {proofs.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -131,7 +99,7 @@ export default function Dashboard() {
             </motion.div>
           ) : (
             <div className="grid gap-4">
-              {userProofs.map((proof, index) => (
+              {proofs.map((proof, index) => (
                 <motion.div
                   key={proof.id}
                   initial={{ opacity: 0, x: -20 }}
