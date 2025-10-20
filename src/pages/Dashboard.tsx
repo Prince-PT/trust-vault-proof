@@ -61,7 +61,7 @@ export default function Dashboard() {
         }
       }
 
-      setProofs(userProofs.reverse());
+      setProofs(userProofs.sort((a, b) => b.timestamp - a.timestamp));
     };
 
     fetchProofs();
