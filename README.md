@@ -1,73 +1,139 @@
-# Welcome to your Lovable project
+# 🛡️ TrustVault — Decentralized Proof-of-Authenticity Vault
 
-## Project info
+> **Own your work. Verify your trust.**
+>
+> TrustVault is a decentralized proof-of-authenticity platform that allows creators, freelancers, and organizations to securely verify, timestamp, and prove ownership of their digital work — directly on-chain.
 
-**URL**: https://lovable.dev/projects/eee28a2e-daf1-4d56-9dfc-cc1e1afe1941
+---
 
-## How can I edit this code?
+## 🚀 Overview
 
-There are several ways of editing your application.
+In today’s digital world, ownership and authenticity are fragile.  
+Designs, documents, and code repositories are shared across platforms, yet there’s no *trustless way* to prove **who created what and when**.  
 
-**Use Lovable**
+**TrustVault** solves this by creating a **Web3-native vault** where your digital assets, credentials, and creations are **cryptographically secured** and **verifiable on-chain** — without revealing the actual content.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/eee28a2e-daf1-4d56-9dfc-cc1e1afe1941) and start prompting.
+Using blockchain-based proofs (and optional ZK integrations), TrustVault enables creators to:
+- Timestamp their original work.
+- Prove authorship and authenticity.
+- Manage and share verifiable credentials.
+- Build a transparent identity and reputation layer across the internet.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 💡 Inspiration
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+From open-source contributors to freelance designers, proving ownership or contribution is still a Web2 pain point. Centralized tools like Google Drive, Notion, or Figma are great for collaboration — but they lack verifiable trust and composability with blockchain identity.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+TrustVault bridges this gap by combining **Web2 usability with Web3 verifiability**, empowering creators to take ownership of their digital footprint.
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🧠 How It Works
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 1. **Connect Your Wallet**
+Users authenticate via their wallet (Metamask, WalletConnect, etc.).  
+Their address becomes the root of trust — no centralized accounts or passwords.
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 2. **Upload Your Asset**
+Users upload any file (code, design, document, certificate, etc.).  
+The frontend generates a **SHA-256 cryptographic hash** — the actual file never leaves the client.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### 3. **Mint a Proof Record**
+That hash, along with metadata (title, timestamp, tags), is **stored on-chain** via a smart contract.  
+This creates a **tamper-proof, timestamped record** of ownership.
 
-**Edit a file directly in GitHub**
+### 4. **Verify or Share**
+Anyone can verify authenticity by comparing the file’s hash with the on-chain record.  
+Optionally, creators can **selectively prove ownership** using **zero-knowledge proofs** without exposing the file contents.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## ⚙️ Features
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- ✅ **On-chain Proof of Ownership**
+  - Each file gets a unique hash permanently recorded on-chain.
+- 🔒 **Privacy-Preserving Verification**
+  - Prove you own the file without revealing it.
+- 🧩 **ENS & DID Integration**
+  - Connect your work to your decentralized identity.
+- 🌐 **Public Portfolio View**
+  - Showcase verifiable achievements to clients or employers.
+- 🏢 **Team Vaults (Future)**
+  - Organizational workspaces for startups or DAOs to prove IP provenance.
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## 🧰 Tech Stack
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Layer | Technology |
+|-------|-------------|
+| **Frontend** | Next.js, React, TailwindCSS, Wagmi, Ethers.js |
+| **Smart Contracts** | Solidity, Foundry / Hardhat |
+| **Storage** | IPFS (optional for metadata), Filecoin (future), Local hashing |
+| **Blockchain** | Ethereum / Base / Linea (depending on track) |
+| **Optional ZK Layer** | Noir / ZK-Kit (for selective disclosure proofs) |
+| **Deployment** | Vercel (frontend), Alchemy / Infura (RPC) |
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/eee28a2e-daf1-4d56-9dfc-cc1e1afe1941) and click on Share -> Publish.
+## 🧩 Architecture
 
-## Can I connect a custom domain to my Lovable project?
+TrustVault is built on a modular Web3 stack with five key layers working together to enable secure, private, and verifiable proof-of-authenticity.
+1. Frontend (Next.js)
+Built with Next.js, React, and Wagmi, the frontend handles wallet connection, local file hashing (SHA-256), metadata generation, and interaction with smart contracts. No file ever leaves the client — ensuring privacy and trustless operation.
+2. Smart Contract Layer
+Written in Solidity, the contract stores the file hash, metadata, and timestamp mapped to the user’s wallet. It emits verification events and allows public proof validation or ownership transfer. This layer ensures immutability and authenticity.
+3. Blockchain Layer
+Deployed on Ethereum L2 networks (Base, Linea, Arbitrum), it maintains an immutable, decentralized record of proofs and timestamps — ensuring transparent and permanent verification.
+4. Off-chain Storage (Optional)
+Uses IPFS or Filecoin for storing metadata or thumbnails linked to on-chain records. This keeps storage costs low while maintaining decentralization and data integrity.
+5. Verification & Privacy Layer
+Supports hash-based authenticity checks and optional ZK-proof verification — allowing users to prove file ownership without revealing content.
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Data Flow
+User uploads → file hashed locally.
+Hash + metadata → stored on-chain.
+Metadata → optional IPFS link.
+Anyone can verify by re-uploading or via ZK proof.
+In short, TrustVault combines on-chain verifiability, off-chain efficiency, and optional ZK privacy to create a secure proof-of-ownership infrastructure for creators and organizations.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+## 🧑‍💻 Use Cases
+
+- **Freelancers & Designers:**  
+  Timestamp and prove ownership of original work or contracts.
+- **Developers:**  
+  Create verifiable proof-of-authorship for open-source contributions.
+- **Institutes & Startups:**  
+  Protect internal research or prototypes from IP theft.
+- **Artists & Writers:**  
+  Create digital certificates of authenticity.
+
+---
+
+## 🌍 Future Roadmap
+
+- [ ] Add ZK-proof-based verification for private file ownership  
+- [ ] Multi-user organizational vaults  
+- [ ] NFT-based “proof badges” for public verification  
+- [ ] Decentralized arbitration for IP disputes  
+- [ ] Integration with Lens / Farcaster for social proofing  
+
+---
+
+## 🏁 Vision
+
+> In the digital era, “ownership” should not depend on trust — it should be **provable**.
+
+TrustVault empowers creators to **own**, **verify**, and **monetize trust** — all on-chain.  
+We’re building the foundation of a more transparent, self-sovereign creator economy.
+
+---
+
+## 📜 License
+MIT License © 2025 TrustVault
+
