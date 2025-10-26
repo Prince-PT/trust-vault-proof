@@ -66,11 +66,25 @@ export default function Dashboard() {
             args: [contentHash],
           }) as any;
 
-          // proofTuple returns: contentHash, vectorHash, availCommitment, creator, timestamp, metadataURI
-          const creator: string = (proofTuple as any).creator ?? (proofTuple as any)[3];
-          const timestampRaw = (proofTuple as any).timestamp ?? (proofTuple as any)[4];
-          const availCommitment: string = (proofTuple as any).availCommitment ?? (proofTuple as any)[2];
+          console.log('Raw proof tuple:', proofTuple);
+          console.log('Proof tuple as array:', Array.isArray(proofTuple) ? proofTuple : 'Not an array');
+
+          // proofTuple returns: [contentHash, vectorHash, availCommitment, creator, timestamp, metadataURI]
+          // Try both named access and index access
+          const creator: string = (proofTuple as any).creator ?? (proofTuple as any)[3] ?? '';
+          const timestampRaw = (proofTuple as any).timestamp ?? (proofTuple as any)[4] ?? 0;
+          const availCommitment: string = (proofTuple as any).availCommitment ?? (proofTuple as any)[2] ?? '0x0000000000000000000000000000000000000000000000000000000000000000';
           const timestampMs = Number(timestampRaw) * 1000;
+
+          console.log('Parsed proof:', {
+            id: i,
+            contentHash,
+            creator,
+            timestamp: timestampMs,
+            availCommitment,
+            connectedAddress: address,
+            match: creator.toLowerCase() === address.toLowerCase()
+          });
 
           // Only add proofs from the connected wallet
           if (creator && creator.toLowerCase() === address.toLowerCase()) {
@@ -82,6 +96,12 @@ export default function Dashboard() {
               availCommitment: availCommitment !== '0x0000000000000000000000000000000000000000000000000000000000000000' 
                 ? availCommitment 
                 : undefined,
+            });
+            console.log('✓ Proof matches user address, added to list');
+          } else {
+            console.log('✗ Proof does not match user address:', {
+              proofCreator: creator,
+              userAddress: address
             });
           }
         } catch (error) {
