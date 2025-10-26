@@ -81,6 +81,7 @@ export default function Verify() {
   const isVerified = verificationData?.[0] as boolean;
   const owner = verificationData?.[1] as string;
   const timestamp = verificationData?.[2] as bigint;
+  const availCommitment = verificationData?.[3] as string;
 
   return (
     <div className="min-h-screen">
@@ -225,6 +226,14 @@ export default function Verify() {
                           : 'Unknown'}
                       </p>
                     </div>
+
+                    {availCommitment && availCommitment !== '0x0000000000000000000000000000000000000000000000000000000000000000' && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Avail DA Commitment</p>
+                        <code className="font-mono text-xs text-primary break-all">{truncateHash(availCommitment, 8)}</code>
+                        <p className="text-xs text-muted-foreground mt-1">✓ Data backed by Avail network</p>
+                      </div>
+                    )}
 
                     <a
                       href={`https://sepolia.etherscan.io/address/${TRUSTVAULT_ADDRESS}`}

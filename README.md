@@ -82,15 +82,15 @@ VITE_NEXUS_API_KEY=your_api_key_here
 
 ## 📜 Smart Contract
 
-**Deployed on Sepolia**: `0x81854C8C0b87B2e14f61ba7c87AaDFEF235d3E56`
+**Deployed on Sepolia**: `0xbAFC4A76712ad5d799fE51f516d4C2bEEc4c1A79`
 
 ### Key Functions
 
-- `registerProof(contentHash, vectorHash, metadataURI)` - Register new proof
-- `verifyHash(hash)` - Verify if hash exists and get details
+- `registerProof(contentHash, vectorHash, availCommitment, metadataURI)` - Register new proof with Avail commitment
+- `verifyHash(hash)` - Verify if hash exists and get details including Avail commitment
 - `getProofById(id)` - Retrieve proof by ID
 
-[View on Etherscan](https://sepolia.etherscan.io/address/0x81854C8C0b87B2e14f61ba7c87AaDFEF235d3E56)
+[View on Etherscan](https://sepolia.etherscan.io/address/0xbAFC4A76712ad5d799fE51f516d4C2bEEc4c1A79)
 
 ## 🌐 Avail Integration
 
@@ -253,7 +253,7 @@ ETHGlobal 2025 Hackathon - Avail Track
 
 ## 🔗 Links
 
-- **Smart Contract**: [View on Etherscan](https://sepolia.etherscan.io/address/0x81854C8C0b87B2e14f61ba7c87AaDFEF235d3E56)
+- **Smart Contract**: [View on Etherscan](https://sepolia.etherscan.io/address/0xbAFC4A76712ad5d799fE51f516d4C2bEEc4c1A79)
 - **Avail Docs**: [docs.availproject.org](https://docs.availproject.org)
 - **Lovable Project**: https://lovable.dev/projects/eee28a2e-daf1-4d56-9dfc-cc1e1afe1941
 

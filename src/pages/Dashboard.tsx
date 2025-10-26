@@ -14,6 +14,7 @@ interface Proof {
   contentHash: string;
   timestamp: number;
   creator: string;
+  availCommitment?: string;
 }
 
 export default function Dashboard() {
@@ -65,9 +66,10 @@ export default function Dashboard() {
             args: [contentHash],
           }) as any;
 
-          // proofTuple returns: contentHash, vectorHash, creator, timestamp, metadataURI
-          const creator: string = (proofTuple as any).creator ?? (proofTuple as any)[2];
-          const timestampRaw = (proofTuple as any).timestamp ?? (proofTuple as any)[3];
+          // proofTuple returns: contentHash, vectorHash, availCommitment, creator, timestamp, metadataURI
+          const creator: string = (proofTuple as any).creator ?? (proofTuple as any)[3];
+          const timestampRaw = (proofTuple as any).timestamp ?? (proofTuple as any)[4];
+          const availCommitment: string = (proofTuple as any).availCommitment ?? (proofTuple as any)[2];
           const timestampMs = Number(timestampRaw) * 1000;
 
           // Only add proofs from the connected wallet
@@ -77,6 +79,9 @@ export default function Dashboard() {
               contentHash,
               timestamp: timestampMs,
               creator,
+              availCommitment: availCommitment !== '0x0000000000000000000000000000000000000000000000000000000000000000' 
+                ? availCommitment 
+                : undefined,
             });
           }
         } catch (error) {

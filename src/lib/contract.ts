@@ -1,4 +1,4 @@
-export const TRUSTVAULT_ADDRESS = '0x81854C8C0b87B2e14f61ba7c87AaDFEF235d3E56' as const;
+export const TRUSTVAULT_ADDRESS = '0xbAFC4A76712ad5d799fE51f516d4C2bEEc4c1A79' as const;
 
 export const TRUSTVAULT_ABI = [
   {
@@ -31,6 +31,7 @@ export const TRUSTVAULT_ABI = [
       { "indexed": true, "internalType": "uint256", "name": "proofId", "type": "uint256" },
       { "indexed": true, "internalType": "bytes32", "name": "contentHash", "type": "bytes32" },
       { "indexed": false, "internalType": "bytes32", "name": "vectorHash", "type": "bytes32" },
+      { "indexed": false, "internalType": "bytes32", "name": "availCommitment", "type": "bytes32" },
       { "indexed": true, "internalType": "address", "name": "creator", "type": "address" },
       { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" },
       { "indexed": false, "internalType": "string", "name": "metadataURI", "type": "string" }
@@ -46,6 +47,7 @@ export const TRUSTVAULT_ABI = [
         "components": [
           { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" },
           { "internalType": "bytes32", "name": "vectorHash", "type": "bytes32" },
+          { "internalType": "bytes32", "name": "availCommitment", "type": "bytes32" },
           { "internalType": "address", "name": "creator", "type": "address" },
           { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
           { "internalType": "string", "name": "metadataURI", "type": "string" },
@@ -86,6 +88,7 @@ export const TRUSTVAULT_ABI = [
     "outputs": [
       { "internalType": "bytes32", "name": "contentHash", "type": "bytes32" },
       { "internalType": "bytes32", "name": "vectorHash", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "availCommitment", "type": "bytes32" },
       { "internalType": "address", "name": "creator", "type": "address" },
       { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
       { "internalType": "string", "name": "metadataURI", "type": "string" }
@@ -97,6 +100,7 @@ export const TRUSTVAULT_ABI = [
     "inputs": [
       { "internalType": "bytes32", "name": "_contentHash", "type": "bytes32" },
       { "internalType": "bytes32", "name": "_vectorHash", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "_availCommitment", "type": "bytes32" },
       { "internalType": "string", "name": "_metadataURI", "type": "string" }
     ],
     "name": "registerProof",
@@ -124,7 +128,8 @@ export const TRUSTVAULT_ABI = [
     "outputs": [
       { "internalType": "bool", "name": "", "type": "bool" },
       { "internalType": "address", "name": "", "type": "address" },
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      { "internalType": "uint256", "name": "", "type": "uint256" },
+      { "internalType": "bytes32", "name": "", "type": "bytes32" }
     ],
     "stateMutability": "view",
     "type": "function"

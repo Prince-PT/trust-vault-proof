@@ -78,17 +78,19 @@ export default function Home() {
       toast.success('No similar content found', { id: 'plagiarism-check' });
 
       // Upload to Avail DA network
-      let availCommitment = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      let availCommitment: `0x${string}` = '0x0000000000000000000000000000000000000000000000000000000000000000';
       
       if (isAvailConfigured()) {
         toast.loading('Uploading to Avail DA...', { id: 'avail-upload' });
         try {
           const fileContent = await extractTextFromFile(uploadedFile);
-          availCommitment = await uploadToAvail({
+          const commitment = await uploadToAvail({
             content: fileContent,
             vector: embedding,
             metadataURI: generateMetadataURI()
           });
+          // Ensure commitment is properly formatted as bytes32
+          availCommitment = commitment.startsWith('0x') ? commitment as `0x${string}` : `0x${commitment}`;
           toast.success('Uploaded to Avail DA!', { id: 'avail-upload' });
         } catch (error) {
           console.error('Avail upload failed:', error);
@@ -98,14 +100,11 @@ export default function Home() {
         console.log('Avail not configured, skipping DA upload');
       }
 
-      // Create metadata URI with Avail commitment embedded
-      const metadataWithAvail = `${generateMetadataURI()}?avail=${availCommitment}`;
-
       await writeContractAsync({
         address: TRUSTVAULT_ADDRESS,
         abi: TRUSTVAULT_ABI,
         functionName: 'registerProof',
-        args: [hash as `0x${string}`, vectorHash, metadataWithAvail],
+        args: [hash as `0x${string}`, vectorHash, availCommitment, generateMetadataURI()],
         gas: 1000000n,
       } as any);
 
