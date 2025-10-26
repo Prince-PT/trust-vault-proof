@@ -35,7 +35,7 @@ async function getEmbedder() {
 /**
  * Extract text content from a file and normalize it
  */
-export async function extractTextFromFile(file: File): Promise<string> {
+async function extractTextFromFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
