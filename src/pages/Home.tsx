@@ -10,6 +10,8 @@ import confetti from 'canvas-confetti';
 import { Link } from 'react-router-dom';
 import { generateSemanticVectorHash, preloadModel, checkSimilarity } from '@/utils/embeddings';
 import { useVectorStorage } from '@/hooks/useVectorStorage';
+import { uploadToAvail, isAvailConfigured } from '@/lib/availClient';
+import { extractTextFromFile } from '@/utils/embeddings';
 
 export default function Home() {
   const { address, isConnected, chain } = useAccount();
@@ -75,11 +77,35 @@ export default function Home() {
       
       toast.success('No similar content found', { id: 'plagiarism-check' });
 
+      // Upload to Avail DA network
+      let availCommitment = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      
+      if (isAvailConfigured()) {
+        toast.loading('Uploading to Avail DA...', { id: 'avail-upload' });
+        try {
+          const fileContent = await extractTextFromFile(uploadedFile);
+          availCommitment = await uploadToAvail({
+            content: fileContent,
+            vector: embedding,
+            metadataURI: generateMetadataURI()
+          });
+          toast.success('Uploaded to Avail DA!', { id: 'avail-upload' });
+        } catch (error) {
+          console.error('Avail upload failed:', error);
+          toast.error('Avail upload failed, continuing without DA', { id: 'avail-upload' });
+        }
+      } else {
+        console.log('Avail not configured, skipping DA upload');
+      }
+
+      // Create metadata URI with Avail commitment embedded
+      const metadataWithAvail = `${generateMetadataURI()}?avail=${availCommitment}`;
+
       await writeContractAsync({
         address: TRUSTVAULT_ADDRESS,
         abi: TRUSTVAULT_ABI,
         functionName: 'registerProof',
-        args: [hash as `0x${string}`, vectorHash, generateMetadataURI()],
+        args: [hash as `0x${string}`, vectorHash, metadataWithAvail],
         gas: 1000000n,
       } as any);
 
